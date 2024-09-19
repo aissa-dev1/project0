@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project0</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+      }
+
+      .app {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .main_canvas {
+        background-color: #333;
+      }
+
+      .main_button {
+        outline: none;
+        border: none;
+        background-color: #333;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s ease-in;
+
+        &:hover {
+          transform: scale(1.1);
+        }
+
+        &:active {
+          transform: scale(1);
+        }
+      }
+
+      .main_input {
+        outline: none;
+        border: none;
+        background-color: #333;
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px 16px;
+        transition: 0.3s ease-in;
+
+        &:focus {
+          transform: scale(1.1);
+        }
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .max_balls_control,
+        .ball_fill_control {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          label {
+            font-weight: 600;
+          }
+        }
+
+        .reset_button {
+          width: fit-content;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="app">
+      <canvas
+        id="main_canvas"
+        class="main_canvas"
+        width="850"
+        height="450"
+      ></canvas>
+      <div class="controls">
+        <div class="max_balls_control">
+          <label for="max_balls_input">Max balls</label>
+          <input
+            id="max_balls_input"
+            type="number"
+            placeholder="Put a number here"
+            class="main_input"
+          />
+        </div>
+        <div class="ball_fill_control">
+          <label for="ball_fill_input">Ball fill</label>
+          <input
+            id="ball_fill_input"
+            type="color"
+            placeholder="Put a number here"
+            class="main_input"
+          />
+        </div>
+        <button id="reset_button" class="main_button reset_button">
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const mainCanvas = document.getElementById("main_canvas");
+      const maxBallsInput = document.getElementById("max_balls_input");
+      const ballFillInput = document.getElementById("ball_fill_input");
+      const resetButton = document.getElementById("reset_button");
+
+      const ctx = mainCanvas.getContext("2d");
+      let animationId = 0;
+      let balls = [];
+      const MaxBallsConfig = Object.freeze({
+        Default: 100,
+        Min: 15,
+        Max: 250,
+      });
+      let maxBalls =
+        JSON.parse(localStorage.getItem("max_balls")) || MaxBallsConfig.Default;
+      let ballFill = localStorage.getItem("ball_fill") || "#ffffff";
+      const ballSizes = [5, 7, 10, 13, 15];
+
+      function draw() {
+        ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+        drawBalls();
+      }
+
+      function update() {
+        updateBalls();
+      }
+
+      function animate() {
+        draw();
+        update();
+        animationId = requestAnimationFrame(animate);
+      }
+
+      function drawBalls() {
+        for (const ball of balls) {
+          ctx.beginPath();
+          ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
+          ctx.fillStyle = ballFill;
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      function updateBalls() {
+        if (balls.length >= maxBalls) {
+          balls.shift();
+        }
+      }
+
+      function init() {
+        maxBallsInput.value = maxBalls;
+        ballFillInput.value = ballFill;
+        mainCanvas.addEventListener("mousemove", (e) => {
+          if (balls.length >= maxBalls) {
+            return;
+          }
+
+          balls.push({
+            x: e.offsetX,
+            y: e.offsetY,
+            size: 15,
+          });
+        });
+        animate();
+      }
+
+      function reset() {
+        balls = [];
+        maxBalls = MaxBallsConfig.Default;
+        maxBallsInput.value = maxBalls;
+        localStorage.setItem("max_balls", JSON.stringify(maxBalls));
+        ballFill = "#ffffff";
+        ballFillInput.value = ballFill;
+        localStorage.setItem("ball_fill", ballFill);
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+      maxBallsInput.addEventListener("input", () => {
+        const value = maxBallsInput.value;
+
+        if (value <= MaxBallsConfig.Min) {
+          maxBalls = MaxBallsConfig.Min;
+          localStorage.setItem("max_balls", value);
+          return;
+        }
+
+        if (value >= MaxBallsConfig.Max) {
+          maxBalls = MaxBallsConfig.Max;
+          localStorage.setItem("max_balls", value);
+          return;
+        }
+
+        maxBalls = parseInt(value);
+        localStorage.setItem("max_balls", value);
+      });
+      ballFillInput.addEventListener("input", () => {
+        ballFill = ballFillInput.value;
+        localStorage.setItem("ball_fill", ballFill);
+      });
+      resetButton.addEventListener("click", reset);
+    </script>
+  </body>
+</html>
